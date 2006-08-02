@@ -1,0 +1,61 @@
+Here's the nagios plugins I have hacked up over the past few months and what they do. Please let me know if you find these scripts useful. It may encourage me to work on them. :-)
+
+Tony Wasson (ajwasson@gmail.com)
+
+check_pg_connections.pl - Shows percentage of connections available. It uses "SELECT COUNT(*) FROM pg_stat_activity" / "SHOW max_connections". It can also alert when less than a certain number of connections are available.
+
+check_pg_queries.pl - If you have query logging enabled this summarizes the types of queries running (SELECT, INSERT, DELETE, UPDATE, ALTER, CREATE, TRUNCATE, VACUUM, COPY) and warns if any queries have been running longer than 5 minutes (configurable).
+
+check_pg_waiting_queries.pl - It whines if any queries are in the "waiting" state. It does this by joining pg_locks with pg_stat_activity. 
+
+check_pg_lock_status.pl - Look for Exclusive locks that can block. This is just testing if a blocking/waiting condition can occur. pg_waiting_queries is actually reporting that a blocking/waiting state IS occuring.
+
+check_pg_time.pl - Makes sure that postgresql's time is in sync with the monitoring server. It also shows the version currently running.
+
+check_pg_max_xid.pl - "With the standard freezing policy, the age column will start at one
+billion for a freshly-vacuumed database." So essentially for any large or high transaction volume database, 1B is normal. The script warns before a wrap could happen at 2 billion transaction IDs. It starts warning once one or more databases show an age over 1.5 billion transactions. It reports critical at 1.75B transactions.
+
+If you are using autovacuum on 8.1, you should not have any trouble with transaction ids. The code in 8.1 is also much better than 7.4 or 8.0 for dealing with a wraparound. You may choose not to use this check, depending on your comfort level.
+
+
+*****
+Here's a sample for your checkcommands.cfg file in nagios
+
+
+#compare time via postgresql
+define command {
+        command_name    check_pg_time
+        command_line    $USER1$/check_pg_time.pl $HOSTADDRESS$ template1 postgres
+}
+
+#Get # of active connecctions
+define command {
+        command_name    check_pg_connections
+        command_line    $USER1$/check_pgconnections.pl $HOSTADDRESS$ template1 postgres
+}
+
+#Get # of db locks
+define command {
+        command_name    check_pg_lock_status
+        command_line    $USER1$/check_pg_lock_status.pl $HOSTADDRESS$ template1 postgres
+}
+
+#Find any queries waiting
+define command{
+        command_name    check_pg_waiting_queries
+        command_line    $USER1$/check_pg_waiting_queries.pl $HOSTADDRESS$ template1 postgres
+        }
+
+#Find slow or abnormal queries running
+define command{
+        command_name    check_pg_queries
+        command_line    $USER1$/check_pgqueries.pl $HOSTADDRESS$ template1 postgres
+}
+
+#Check postgresql transaction IDs
+define command{
+        command_name    check_pg_transactionids
+        command_line    $USER1$/check_pg_max_xid.pl $HOSTADDRESS$ template1 postgres
+}
+ 
+
