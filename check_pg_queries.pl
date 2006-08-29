@@ -4,7 +4,7 @@ use DBI;
 
 my $dbhost=$ARGV[0] || die "Usage: (IP or hostname) (initial database) (database username)\n";
 my $dbname=$ARGV[1] || 'postgres';  # you may use template1?
-my $dbuser=$ARGV[2] || 'postgres';
+my $dbuser=$ARGV[2] || 'postgres'; 
 my $dbpass=$ARGV[3] || '';
 
 # Use postgresql interval descriptions here
@@ -34,6 +34,7 @@ my $copy_count=0;
 
 my $count=0; #count of queries of interest
 my $total_count; # total number of connections
+my $nonidle_count; 
 my $detail=0;
 my $short_query;
 
@@ -45,12 +46,13 @@ my $msg_counts='';
 my $Con = "DBI:Pg:dbname=$dbname;host=$dbhost";
 my $Dbh = DBI->connect($Con, $dbuser, $dbpass, {RaiseError => 0, PrintError => 0}) || die "Unable to access Database '$dbname' on host '$dbhost' as user '$dbuser'. Error returned was: ". $DBI::errstr ."";
 
-my $sql="SELECT datname,current_query,(((timeofday()::TIMESTAMP)-query_start)) AS duration, (CASE WHEN timeofday()::TIMESTAMP-query_start > INTERVAL '$slow_interval' THEN TRUE ELSE FALSE END) AS slow,usename FROM pg_stat_activity;";
+my $sql="SELECT datname,current_query,(((timeofday()::TIMESTAMP)-query_start)) AS duration, (CASE WHEN timeofday()::TIMESTAMP-query_start > INTERVAL '$slow_interval' THEN TRUE ELSE FALSE END) AS slow,usename FROM pg_stat_activity();";
 
 my $sth = $Dbh->prepare($sql);
-$sth->execute();
+$sth->execute() || print "CRITICAL! Unable to run query, got: $DBI::errstr";
 while (my ($datname,$query,$duration,$slow,$username) = $sth->fetchrow()) 
 {
+	print "$username\@$datname -> $query\n";
 	if ($slow =~ /1/i)
 	{
 		if ($query =~/\<IDLE\>/i)
@@ -140,7 +142,10 @@ while (my ($datname,$query,$duration,$slow,$username) = $sth->fetchrow())
 }
 $Dbh->disconnect;
 
-my $nonidle_count=$total_count-$idle_count;
+if ($total_count)
+{
+	$nonidle_count=$total_count-$idle_count;
+}
 
 # 0 OK
 # 1 WARNING
@@ -155,7 +160,7 @@ elsif ($count > 1)
 {
 	$status=1;
 }
-elsif ($total_count >= 0)
+elsif ($total_count && $total_count >= 0)
 {
 	$status=0;
 }
@@ -222,7 +227,7 @@ if (length($msg_counts) > 1)
 	$msg_counts="($msg_counts)";
 }
 
-if ($total_count >= 0)
+if ($total_count && $total_count >= 0)
 {
 	print "$nonidle_count of $total_count connections are active $msg_counts $msg_query_details\n";
 }
