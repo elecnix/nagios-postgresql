@@ -8,6 +8,7 @@ my $dbuser=$ARGV[2] || 'postgres';
 my $dbpass=$ARGV[3] || '';
 
 my $status;
+my $msg;
 
 #init variables
 my $query_output ='';
@@ -18,7 +19,7 @@ my $waiting_count=0;
 my $connections;
 
 
-$sql="SELECT datname
+my $sql="SELECT datname
     , procpid
     , usename
     , query_start::timestamp(0)
@@ -49,7 +50,7 @@ while (my ($datname,$pid,$username,$start_time,$run_time,$waiting,$current_query
 	}
 }
 $sth->finish();
- 
+
 if ($waiting_count && $waiting_count >= 0)
 {
 	print "$waiting_count queries waiting. $msg\n";
