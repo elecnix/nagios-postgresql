@@ -1,4 +1,6 @@
-1) Using psql or pgadmin, run pg_stat_activity.sql on the databases to be monitored. This will install a function that will let non super users "see" the contents of the current query. 
+1) Using psql or pgadmin, run pg_stat_activity.sql on the databases to be 
+monitored. This will install a function that will let non super users "see" 
+the contents of the current query. 
 
 (Enter your IP and database superuser information if different)
 $ psql -U postgres -h 192.168.1.10 postgres
@@ -15,9 +17,12 @@ postgres=# CREATE USER nagios WITH PASSWORD 'something_secret';
 CREATE USER
 
 
-3) Make sure your pg_hba.conf is setup to allow appropriate access from your nagios machine. If your monitoring machine is 192.168.1.99 and you only want to allow a single user called "nagios" to access the database called "postgres", you could use a line like so:
+3) Make sure your pg_hba.conf is setup to allow appropriate access from your 
+nagios machine. If your monitoring machine is 192.168.1.99 and you only want 
+to allow a single user called "nagios" to access the database called "postgres",
+ you could use a line like so:
 
-# this is for postgresql 8.1
+# this is for postgresql 8.1+
 # The user 'nagios' can connect to the database 'postgres' from 192.168.1.99 with a password
 host    postgres    nagios      192.168.1.99/32       md5
 
@@ -26,20 +31,27 @@ host    postgres    nagios      192.168.1.99/32       md5
 host    postgres    nagios      192.168.1.99   255.255.255.255       md5
 
 If you want a full discussion of pg_hba.conf see:
-http://www.postgresql.org/docs/8.1/static/client-authentication.html
+http://www.postgresql.org/docs/current/interactive/client-authentication.html
 
 
-4) Make sure your postgresql.conf is setup for monitoring. If you want to do "query profiling" using check_pg_queries.pl, you'll *NEED* these variables changed. 
+4) Make sure your postgresql.conf is setup for monitoring. If you want to do 
+"query profiling" using check_pg_queries.pl, you'll *NEED* these variables changed. 
 
 # edit these 2 lines in your postgresql.conf to allow query profiling
 stats_start_collector = true
 stats_command_string = true
 
 
-5) If you changed your pg_hba.conf or postgresql.conf, you'll need to reload postgresql. If you have a start/stop script you can use that, or you can use pg_ctl directly like so.
+5) If you changed your pg_hba.conf or postgresql.conf, you'll need to reload 
+your postgresql config files. If you have a start/stop script you can use that,
+ or you can use pg_ctl directly like so.
 
 [pgsql@localhost bin]$ ./pg_ctl -D /usr/local/pgsql/data/ reload
 postmaster signaled
+
+NOTE: If you have changed "stats_start_collector" from above, you will need to
+restart your postgres, not just reload the config file. 
+
 
 6) Test the function as non super user from your nagios machine.
 
@@ -58,6 +70,6 @@ postgres=> SELECT * FROM pg_stat_activity();
 PROBLEM:  You are seeing "command string not enabled".
 
 1) double check you have setup your postgresql.conf file correctly.
-2) Make sure you have reloaded postgres.
+2) Make sure you have reloaded/restarted postgres.
 
 
