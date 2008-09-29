@@ -8,6 +8,10 @@ $ psql -U postgres -h 192.168.1.10 postgres
 postgres=# \i pg_stat_activity.sql
 CREATE FUNCTION
 
+If you get "ERROR:  language "plpgsql" does not exist", create it:
+
+$ createlang -U postgres -h 192.168.1.10 plpgsql postgres
+
 
 2) If desired, add a non super user to monitor your databases. 
 
