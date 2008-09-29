@@ -33,7 +33,7 @@ my $max_conn = $row_max[0];
 #while (($mconn) = $sth_max->fetchrow()) {
 #	$max_conn=$mconn;
 #}
-$sth_curr->execute();
+$sth_curr->execute() || print "CRITICAL! Unable to run query, got: $DBI::errstr";
 my @row_curr = $sth_curr->fetchrow_array;
 my $curr_conn = $row_curr[0];
 #while (($conn) = $sth_curr->fetchrow()) {
@@ -65,7 +65,7 @@ else
 # 2 CRITICAL
 # 3 UNKNOWN
 
-if ($max_conn >= 0)
+if ($max_conn >= 0 && defined $curr_conn)
 {
 	print "$curr_conn of $max_conn Connections Used ($used_pct%)\n";
 }
