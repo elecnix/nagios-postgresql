@@ -72,4 +72,11 @@ PROBLEM:  You are seeing "command string not enabled".
 1) double check you have setup your postgresql.conf file correctly.
 2) Make sure you have reloaded/restarted postgres.
 
+7) Test connection to database by invoking script:
+
+$ /path/to/check_pg_connections.pl 192.168.1.10 user password
+
+If you get "Can't locate DBI.pm", on Debian you can install the required modules with:
+
+$ sudo apt-get install libdbi-perl libdbd-pg-perl
 
