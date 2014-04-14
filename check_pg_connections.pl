@@ -24,7 +24,7 @@ my $Con = "DBI:Pg:dbname=$dbname;host=$dbhost";
 my $Dbh = DBI->connect($Con, $dbuser, $dbpass, {RaiseError => 0, PrintError => 0}) || die "Unable to access Database '$dbname' on host '$dbhost' as user '$dbuser'. Error returned was: ". $DBI::errstr ."";
 
 my $sql_max="SHOW max_connections;";
-my $sql_curr="SELECT COUNT(*) FROM pg_stat_activity();";
+my $sql_curr="SELECT COUNT(*) FROM pg_stat_activity;";
 my $sth_max = $Dbh->prepare($sql_max);
 my $sth_curr = $Dbh->prepare($sql_curr);
 $sth_max->execute() || print "CRITICAL! Unable to run query, got: $DBI::errstr";;
