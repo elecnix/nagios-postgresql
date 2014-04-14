@@ -26,7 +26,7 @@ my $sql="SELECT datname
     , NOW()::timestamp(0)-query_start::timestamp(0) as run_time
     , (CASE WHEN l.granted IS NOT NULL THEN TRUE ELSE FALSE END) AS waiting
     , current_query
-  FROM pg_stat_activity() AS p 
+  FROM pg_stat_activity AS p 
   LEFT JOIN pg_locks AS l ON (l.pid=p.procpid AND granted != TRUE) 
   ORDER BY datname
   ";
