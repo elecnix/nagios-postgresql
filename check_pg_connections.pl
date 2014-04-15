@@ -54,12 +54,12 @@ my $dbpass=$ARGS{password}    || '';
 my $status; 
 ### Thresholds ###
 # Warn or Critical if less than this number of free connections are found
-my $warn_count_free_conn=$ARGS{warning_count}    || 25;
-my $crit_count_free_conn=$ARGS{critical_count}   || 10;
+my $warn_count_free_conn=$ARGS{warning_count};    #|| 25;
+my $crit_count_free_conn=$ARGS{critical_count};   #|| 10;
 
 # Warn or Critical is less than this percentage of connections are available
-my $warn_pct_free_conn=$ARGS{warning_pct};   #|| 20;  
-my $crit_pct_free_conn=$ARGS{critical_pct};  #|| 10;
+my $warn_pct_free_conn=$ARGS{warning_pct}   || 20;  
+my $crit_pct_free_conn=$ARGS{critical_pct}  || 10;
 
 #Connect to Database, if we can't connect exit with UNKNOWN state
 my $Con = "DBI:Pg:dbname=$dbname;host=$dbhost";
