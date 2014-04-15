@@ -1,11 +1,53 @@
 #!/usr/bin/perl -w
 use DBI;
 use strict;
+use Getopt::Long;
 
-my $dbhost=$ARGV[0] || die "Usage: (IP or hostname) (initial database) (database username)\n";
-my $dbname=$ARGV[1] || 'postgres';  # you may use template1?
-my $dbuser=$ARGV[2] || 'postgres';
-my $dbpass=$ARGV[3] || '';
+sub usage {
+    my $message = $_[0];
+    if (defined $message && length $message) {
+        $message .= "\n\n"
+            unless $message =~ /\n$/;
+    } else {
+        $message = '';
+    }
+    print STDERR (
+        $message,
+        "Usage:  $0 [OPTIONS]\n" . 
+        "\n" .
+        "  -H,  --hostname=ADDRESS  (IP or hostname)\n" .
+        "  -d,  --database=STRING   (database name)\n" .
+        "  -U,  --username=STRING   (database username)\n" .
+        "  -p,  --password=STRING   (database password)\n" .
+        "\n" .
+        "\n" .
+        "  -w,  --warning-exlocks   (Warn if Exclusive Locks greater than this number [default: 5])\n" .
+        "  -c,  --critical-exlocks  (Critical if Exclusive Locks greater than this number [default: 10])\n"
+    );
+    die("\n")
+}
+
+my %ARGS = ();
+
+GetOptions ("H|hostaddress=s"   => \$ARGS{hostaddress},
+            "D|database=s"      => \$ARGS{database},
+            "U|username=s"      => \$ARGS{username},
+            "p|password=s"      => \$ARGS{password},
+            "W|warning-pct=i"   => \$ARGS{warning_exlocks},
+            "C|critical-pct=i"  => \$ARGS{critical_exlocks},            
+            'help'              => \$ARGS{help}) or usage();
+
+if ( $ARGS{help} ) {
+    usage("")
+}
+
+my $dbhost=$ARGS{hostaddress} ||  usage("Required argument: -H, --hostname=ADDRESS");
+my $dbname=$ARGS{database}    || 'postgres';
+my $dbuser=$ARGS{username}    || 'postgres';
+my $dbpass=$ARGS{password}    || '';
+
+my $warn_count_exlocks=$ARGS{warning_exlocks}  || 5;
+my $crit_count_exlocks=$ARGS{critical_exlocks} || 10;
 
 #Default to Unknown Status
 my $status=3;
@@ -32,11 +74,11 @@ while (my ($mode,$count) = $sth->fetchrow())
 	$msg="$msg $mode($count),";
 }
 
-if ($exlocks > 10)
+if ($exlocks > $crit_count_exlocks)
 {
 	$status=2;
 }
-elsif ($exlocks > 5)
+elsif ($exlocks > $warn_count_exlocks)
 {
 	$status=1;
 }
