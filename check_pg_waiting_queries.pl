@@ -1,11 +1,44 @@
 #!/usr/bin/perl -w
 #use strict;
 use DBI;
+use Getopt::Long;
 
-my $dbhost=$ARGV[0] || die "Usage: (IP or hostname) (initial database) (database username)\n";
-my $dbname=$ARGV[1] || 'postgres';
-my $dbuser=$ARGV[2] || 'postgres';
-my $dbpass=$ARGV[3] || '';
+sub usage {
+    my $message = $_[0];
+    if (defined $message && length $message) {
+        $message .= "\n\n"
+            unless $message =~ /\n$/;
+    } else {
+        $message = '';
+    }
+    print STDERR (
+        $message,
+        "Usage:  $0 [OPTIONS]\n" . 
+        "\n" .
+        "  -H,  --hostname=ADDRESS  (IP or hostname)\n" .
+        "  -d,  --database=STRING   (database name)\n" .
+        "  -U,  --username=STRING   (database username)\n" .
+        "  -p,  --password=STRING   (database password)\n"
+    );
+    die("\n")
+}
+
+my %ARGS = ();
+
+GetOptions ("H|hostaddress=s"            => \$ARGS{hostaddress},
+            "D|database=s"               => \$ARGS{database},
+            "U|username=s"               => \$ARGS{username},
+            "p|password=s"               => \$ARGS{password},          
+            'help'                       => \$ARGS{help}) or usage();
+
+if ( $ARGS{help} ) {
+    usage("")
+}
+
+my $dbhost=$ARGS{hostaddress} || usage("Required argument: -H, --hostname=ADDRESS");
+my $dbname=$ARGS{database}    || 'postgres'; # you may use template1?
+my $dbuser=$ARGS{username}    || 'postgres';
+my $dbpass=$ARGS{password}    || '';
 
 my $status;
 my $msg;

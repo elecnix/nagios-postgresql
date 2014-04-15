@@ -1,23 +1,65 @@
 #!/usr/bin/perl -w
 use DBI;
 use strict; 
+use Getopt::Long;
 
-my $dbhost=$ARGV[0] || die "Usage: (IP or hostname) (initial database) (database username)\n";
-my $dbname=$ARGV[1] || 'postgres';
-my $dbuser=$ARGV[2] || 'postgres';
-my $dbpass=$ARGV[3] || '';
+sub usage {
+    my $message = $_[0];
+    if (defined $message && length $message) {
+        $message .= "\n\n"
+            unless $message =~ /\n$/;
+    } else {
+        $message = '';
+    }
+    print STDERR (
+        $message,
+        "Usage:  $0 [OPTIONS]\n" . 
+        "\n" .
+        "  -H,  --hostname=ADDRESS  (IP or hostname)\n" .
+        "  -d,  --database=STRING   (database name)\n" .
+        "  -U,  --username=STRING   (database username)\n" .
+        "  -p,  --password=STRING   (database password)\n" .
+        "\n" .
+        "\n" .
+        "  -w,  --warning-pct       (Warn if less than percent of connections are available [default: 20])\n" .
+        "  -c,  --critical-pct      (Critical if less than percent of connections are available [default: 10])\n" .
+        "\n" .
+        "  --warning-count          (Warn if less than free connections are found [default: 25])\n" .
+        "  --critical-count         (Critical if less than free connections are found [default: 10])\n"
+    );
+    die("\n")
+}
+
+my %ARGS = ();
+
+GetOptions ("H|hostaddress=s"   => \$ARGS{hostaddress},
+            "D|database=s"      => \$ARGS{database},
+            "U|username=s"      => \$ARGS{username},
+            "p|password=s"      => \$ARGS{password},
+            "W|warning-pct=i"   => \$ARGS{warning_pct},
+            "C|critical-pct=i"  => \$ARGS{critical_pct},            
+            "warning-count=i"   => \$ARGS{warning_count},
+            "critical-count=i"  => \$ARGS{critical_count},
+            'help'              => \$ARGS{help}) or usage();
+
+if ( $ARGS{help} ) {
+    usage("")
+}
+
+my $dbhost=$ARGS{hostaddress} ||  usage("Required argument: -H, --hostname=ADDRESS");
+my $dbname=$ARGS{database}    || 'postgres';
+my $dbuser=$ARGS{username}    || 'postgres';
+my $dbpass=$ARGS{password}    || '';
 
 my $status; 
-
 ### Thresholds ###
 # Warn or Critical if less than this number of free connections are found
-my $warn_count_free_conn=25;
-my $crit_count_free_conn=10;
+my $warn_count_free_conn=$ARGS{warning_count}    || 25;
+my $crit_count_free_conn=$ARGS{critical_count}   || 10;
 
 # Warn or Critical is less than this percentage of connections are available
-my $warn_pct_free_conn=20;  
-my $crit_pct_free_conn=10;
-
+my $warn_pct_free_conn=$ARGS{W}||$ARGS{warning_pct}   || 20;  
+my $crit_pct_free_conn=$ARGS{C}||$ARGS{critical_pct}  || 10;
 
 #Connect to Database, if we can't connect exit with UNKNOWN state
 my $Con = "DBI:Pg:dbname=$dbname;host=$dbhost";
