@@ -24,8 +24,8 @@ sub usage {
         "  -w,  --warning-pct       (Warn if less than percent of connections are available [default: 20])\n" .
         "  -c,  --critical-pct      (Critical if less than percent of connections are available [default: 10])\n" .
         "\n" .
-        "  --warning-count          (Warn if less than free connections are found [default: 25])\n" .
-        "  --critical-count         (Critical if less than free connections are found [default: 10])\n"
+        "  --warning-count          (Warn if less than free connections are found [default: null])\n" .
+        "  --critical-count         (Critical if less than free connections are found [default: null])\n"
     );
     die("\n")
 }
@@ -58,8 +58,8 @@ my $warn_count_free_conn=$ARGS{warning_count}    || 25;
 my $crit_count_free_conn=$ARGS{critical_count}   || 10;
 
 # Warn or Critical is less than this percentage of connections are available
-my $warn_pct_free_conn=$ARGS{W}||$ARGS{warning_pct}   || 20;  
-my $crit_pct_free_conn=$ARGS{C}||$ARGS{critical_pct}  || 10;
+my $warn_pct_free_conn=$ARGS{warning_pct}   #|| 20;  
+my $crit_pct_free_conn=$ARGS{critical_pct}  #|| 10;
 
 #Connect to Database, if we can't connect exit with UNKNOWN state
 my $Con = "DBI:Pg:dbname=$dbname;host=$dbhost";
@@ -85,23 +85,42 @@ my $avail_conn=$max_conn-$curr_conn;
 my $avail_pct=$avail_conn/$max_conn*100;
 my $used_pct=sprintf("%2.1f", $curr_conn/$max_conn*100);
 
-if ($avail_pct < $warn_pct_free_conn || $avail_conn < $warn_count_free_conn)
-{
-	$status=2;
-}
-elsif ($avail_pct < $crit_pct_free_conn || $avail_conn < $crit_count_free_conn)
-{
-	$status=1;
-}
-elsif ($avail_pct > $warn_pct_free_conn && $avail_conn > $warn_count_free_conn)
-{
-	$status=0;
-}
-else
-{
-	$status=3;
-}
 
+if ( $warn_count_free_conn && $crit_count_free_conn ) {
+
+    if ($avail_pct < $warn_pct_free_conn || $avail_conn < $warn_count_free_conn)
+    {
+        $status=2;
+    }
+    elsif ($avail_pct < $crit_pct_free_conn || $avail_conn < $crit_count_free_conn)
+    {
+        $status=1;
+    }
+    elsif ($avail_pct > $warn_pct_free_conn && $avail_conn > $warn_count_free_conn)
+    {
+        $status=0;
+    }
+    else
+    {
+        $status=3;
+    }
+
+} else {
+
+    if ($avail_pct < $warn_pct_free_conn)
+    {
+    	$status=2;
+    }
+    elsif ($avail_pct < $crit_pct_free_conn)
+    {
+    	$status=1;
+    }
+    else
+    {
+    	$status=3;
+    }
+
+}
 # 0 OK 
 # 1 WARNING
 # 2 CRITICAL
