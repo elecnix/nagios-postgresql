@@ -107,17 +107,17 @@ if ( $warn_count_free_conn && $crit_count_free_conn ) {
 
 } else {
 
-    if ($avail_pct < $warn_pct_free_conn)
+    if ($avail_pct <= $crit_pct_free_conn)
     {
     	$status=2;
     }
-    elsif ($avail_pct < $crit_pct_free_conn)
+    elsif ($avail_pct <= $warn_pct_free_conn)
     {
     	$status=1;
     }
     else
     {
-    	$status=3;
+    	$status=0;
     }
 
 }
