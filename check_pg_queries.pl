@@ -1,11 +1,58 @@
 #!/usr/bin/perl -w
 use strict;
 use DBI;
+use Getopt::Long;
 
-my $dbhost=$ARGV[0] || die "Usage: (IP or hostname) (initial database) (database username)\n";
-my $dbname=$ARGV[1] || 'postgres';  # you may use template1?
-my $dbuser=$ARGV[2] || 'postgres'; 
-my $dbpass=$ARGV[3] || '';
+sub usage {
+    my $message = $_[0];
+    if (defined $message && length $message) {
+        $message .= "\n\n"
+            unless $message =~ /\n$/;
+    } else {
+        $message = '';
+    }
+    print STDERR (
+        $message,
+        "Usage:  $0 [OPTIONS]\n" . 
+        "\n" .
+        "  -H,  --hostname=ADDRESS  (IP or hostname)\n" .
+        "  -d,  --database=STRING   (database name)\n" .
+        "  -U,  --username=STRING   (database username)\n" .
+        "  -p,  --password=STRING   (database password)\n" .
+        "\n" .
+        "\n" .
+        "  -s,  --slow-query-time       (Time interval of slow querys found [default: '5 minutes'])\n" .
+        "  -w,  --warning-count-querys  (Warn  [default: 1])\n" .
+        "  -c,  --critical-count-querys (Critical  [default: 3])\n"
+    );
+    die("\n")
+}
+
+my %ARGS = ();
+
+GetOptions ("H|hostaddress=s"            => \$ARGS{hostaddress},
+            "D|database=s"               => \$ARGS{database},
+            "U|username=s"               => \$ARGS{username},
+            "p|password=s"               => \$ARGS{password},
+            "s|slow-query-time=s"        => \$ARGS{slow_query_time},
+            "W|warning-count-querys=i"   => \$ARGS{warning_count_querys},
+            "C|critical-count-querys=i"  => \$ARGS{critical_count_querys},            
+            'help'                       => \$ARGS{help}) or usage();
+
+if ( $ARGS{help} ) {
+    usage("")
+}
+
+my $dbhost=$ARGS{hostaddress} || usage("Required argument: -H, --hostname=ADDRESS");
+my $dbname=$ARGS{database}    || 'postgres'; # you may use template1?
+my $dbuser=$ARGS{username}    || 'postgres';
+my $dbpass=$ARGS{password}    || '';
+
+# Warn if count slow querys more than 1
+my $warn_count_querys=$ARGS{warning_count_querys}  || 1;
+
+# Critical slow querys more than 3
+my $crit_count_querys=$ARGS{critical_count_querys} || 3;
 
 # Use postgresql interval descriptions here
 # in the format of INTERVAL '$slow_interval'
@@ -13,7 +60,7 @@ my $dbpass=$ARGV[3] || '';
 #    10 seconds
 #    15 minutes
 #    4 hours
-my $slow_interval = "5 minutes"; 
+my $slow_interval = $ARGS{slow_query_time} || "5 minutes"; 
 
 #Default to Unknown Status
 my $status=3;
@@ -152,11 +199,11 @@ if ($total_count)
 # 2 CRITICAL
 # 3 UNKNOWN
 
-if ($count > 3)
+if ($count > $crit_count_querys)
 {
 	$status=2;
 }
-elsif ($count > 1)
+elsif ($count > $warn_count_querys)
 {
 	$status=1;
 }

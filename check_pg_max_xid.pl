@@ -1,11 +1,50 @@
 #!/usr/bin/perl -w
 use strict;
 use DBI;
+use Getopt::Long;
 
-my $dbhost=$ARGV[0] || die "Usage: (IP or hostname) (initial database) (database username)\n";
-my $dbname=$ARGV[1] || 'postgres';  # you may use template1?
-my $dbuser=$ARGV[2] || 'postgres';
-my $dbpass=$ARGV[3] || '';
+sub usage {
+    my $message = $_[0];
+    if (defined $message && length $message) {
+        $message .= "\n\n"
+            unless $message =~ /\n$/;
+    } else {
+        $message = '';
+    }
+    print STDERR (
+        $message,
+        "Usage:  $0 [OPTIONS]\n" . 
+        "\n" .
+        "  -H,  --hostname=ADDRESS  (IP or hostname)\n" .
+        "  -d,  --database=STRING   (database name)\n" .
+        "  -U,  --username=STRING   (database username)\n" .
+        "  -p,  --password=STRING   (database password)\n" .
+        "\n" .
+        "\n" .
+        "  -w,  --warning-xid-m     (Warn if max xid is greater equal than this number [default: 1500])\n" .
+        "  -c,  --critical-xid-m    (Critical if max xid is greater equal than this number [default: 1700])\n"
+    );
+    die("\n")
+}
+
+my %ARGS = ();
+
+GetOptions ("H|hostaddress=s"     => \$ARGS{hostaddress},
+            "D|database=s"        => \$ARGS{database},
+            "U|username=s"        => \$ARGS{username},
+            "p|password=s"        => \$ARGS{password},
+            "W|warning-xid-m=i"   => \$ARGS{warning_xid_m},
+            "C|critical-xid-m=i"  => \$ARGS{critical_xid_m},            
+            'help'                => \$ARGS{help}) or usage();
+
+if ( $ARGS{help} ) {
+    usage("")
+}
+
+my $dbhost=$ARGS{hostaddress} ||  usage("Required argument: -H, --hostname=ADDRESS");
+my $dbname=$ARGS{database}    || 'postgres';
+my $dbuser=$ARGS{username}    || 'postgres';
+my $dbpass=$ARGS{password}    || '';
 
 #=================
 # Configuration
@@ -16,10 +55,10 @@ my $dbpass=$ARGV[3] || '';
 my $wrap_xid_M=2000;
 
 # Warn at 1.5 Billion
-my $warn_xid_M=1500;
+my $warn_xid_M=$ARGS{warning_xid_m}  || 1500;
 
 # Critical at 1.7 Billion
-my $crit_xid_M=1700;
+my $crit_xid_M=$ARGS{critical_xid_m} || 1700;
 
 #Variables
 my $max_xid_pct=-99; # default to a negative percentage
