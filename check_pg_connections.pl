@@ -36,28 +36,42 @@ my $max_conn = $row_max[0];
 $sth_curr->execute() || print "CRITICAL! Unable to run query, got: $DBI::errstr";
 my @row_curr = $sth_curr->fetchrow_array;
 my $curr_conn = $row_curr[0];
-#while (($conn) = $sth_curr->fetchrow()) {
-#	$curr_conn=$conn;
-#}
+
+if(not defined $curr_conn)
+{
+	print "ERROR - Unable to determine maximum number of connections. Verify connectivity and access.\n";
+	exit 3;
+}
+
 my $avail_conn=$max_conn-$curr_conn;
 my $avail_pct=$avail_conn/$max_conn*100;
 my $used_pct=sprintf("%2.1f", $curr_conn/$max_conn*100);
-
-if ($avail_pct < $warn_pct_free_conn || $avail_conn < $warn_count_free_conn)
+my $status_text = "";
+my $warn_conn=$max_conn*(100-$warn_pct_free_conn)/100;
+if ($max_conn-$warn_count_free_conn)
 {
-	$status=2;
+	$warn_conn=$max_conn*(100-$warn_count_free_conn)/100;
 }
-elsif ($avail_pct < $crit_pct_free_conn || $avail_conn < $crit_count_free_conn)
+my $crit_conn=$max_conn*(100-$crit_pct_free_conn)/100;
+if ($max_conn-$crit_count_free_conn)
+{
+	$crit_conn=$max_conn*(100-$crit_count_free_conn)/100;
+}
+
+if ($curr_conn>$crit_conn)
 {
 	$status=1;
+	$status_text = "CRITICAL";
 }
-elsif ($avail_pct > $warn_pct_free_conn && $avail_conn > $warn_count_free_conn)
+elsif ($curr_conn>$warn_conn)
 {
-	$status=0;
+	$status=2;
+	$status_text = "WARNING";
 }
 else
 {
-	$status=3;
+	$status=0;
+	$status_text = "OK";
 }
 
 # 0 OK 
@@ -65,13 +79,13 @@ else
 # 2 CRITICAL
 # 3 UNKNOWN
 
-if ($max_conn >= 0 && defined $curr_conn)
+if ($max_conn >= 0)
 {
-	print "$curr_conn of $max_conn Connections Used ($used_pct%)\n";
+	print "$status_text - $curr_conn of $max_conn Connections Used ($used_pct%)|$curr_conn;$warn_conn;$crit_conn;$max_conn\n";
 }
 else
 {
 	print "ERROR - Unable to determine maximum number of connections. Verify connectivity and access.\n";
+	$status=3;
 }
 exit $status;
-
