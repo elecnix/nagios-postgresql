@@ -78,7 +78,7 @@ PROBLEM:  You are seeing "command string not enabled".
 
 7) Test connection to database by invoking script:
 
-$ /path/to/check_pg_connections.pl 192.168.1.10 user password
+$ /path/to/check_pg_connections.pl -H 192.168.1.10 -U user -P password
 
 If you get "Can't locate DBI.pm", on Debian you can install the required modules with:
 

@@ -54,7 +54,7 @@ define command {
 #Get # of active connecctions
 define command {
         command_name    check_pg_connections
-        command_line    $USER1$/check_pgconnections.pl $HOSTADDRESS$ template1 postgres
+        command_line    $USER1$/check_pgconnections.pl -H $HOSTADDRESS$ -d template1 -U postgres
 }
 
 #Get # of db locks
